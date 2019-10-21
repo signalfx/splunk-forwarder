@@ -13,14 +13,15 @@ from collections import OrderedDict
 token = ""
 dryRun = False
 debug = False
-ingest = ""
+ingest_url = "https://ingest.signalfx.com/v2/datapoint"
 
 
 def populatePayload(metric_type, metric_list, payload):
     expanded = []
     for metric, value in metric_list:
         expanded.append(dict([("metric",metric), ("value",value)]))
-        if timestamp:
+        if timestamp
+        cl
             expanded[-1]["timestamp"] = timestamp
         expanded[-1]["dimensions"] = dimensions
     if (metric_type in payload):
@@ -33,27 +34,15 @@ configs = ConfigParser.ConfigParser(allow_no_value=True)
 localConfig = os.path.abspath(os.path.join(os.getcwd(),"..","local","sfx.conf"))
 defaultConfig = os.path.abspath(os.path.join(os.getcwd(),"..","default","sfx.conf"))
 
-# Set the default values. ConfigParser bundled with Splunk is not the latest
-configs.add_section("output")
-configs.set("output","token",token)
-configs.set("output","ingest_url",ingest)
-
 # Read the default section then local so local will take precedence
 configs.read(defaultConfig)
 configs.read(localConfig)
-token = ""
-if "output" in configs.sections():
-    ingest = configs.get("output","ingest_url")
 
-# default to sending to ingest
-target = ingest
+if configs.get("SignalFxConfig", "ingest_url"):
+    ingest_url = configs.get("SignalFxConfig","ingest_url"):
 
-def getCredentials(session_key):
-    entities = entity.getEntities(['admin', 'passwords'], namespace="sfxforwarder",
-                                    owner='nobody', sessionKey=session_key)
-    for i, c in entities.items():
-        return c['username'], c['clear_password']
-
+if configs.get("SignalFxConfig", "access_token"):
+    token = configs.get("SignalFxConfig","access_token")
 
 for arg in sys.argv[:]:
     if arg.startswith("dryrun="):
@@ -63,7 +52,6 @@ for arg in sys.argv[:]:
 
 
 results, dummy, settings = inter.getOrganizedResults()
-user, token = getCredentials(settings.get("sessionKey"));
 outbuffer = []
 
 payload = OrderedDict()
@@ -92,7 +80,7 @@ for result in results:
                     dimensions[key.replace(".","_")] = value
     if debug:
         result["token"] = token
-        result["endpoint"] = target
+        result["endpoint"] = ingest_url
     if len(gauge)>0 or len(counter)>0 or len(cumulative_counter)>0:
         if len(gauge)>0:
             populatePayload("gauge", gauge, payload)
@@ -102,7 +90,8 @@ for result in results:
             populatePayload("cumulative_counter", cumulative_counter, payload)
     outbuffer.append(result)
 if not dryRun:
-    r = requests.post(target, headers={"X-SF-TOKEN":token,"Content-Type":"application/json"}, data=json.dumps(payload))
+    r = requests.post(ingest_url, headers={"X-SF-TOKEN":token,"Content-Type":"application/json"}, data=json.dumps(payload))
     for result in outbuffer:
         result["status"] = r.status_code
+
 inter.outputResults(outbuffer)
