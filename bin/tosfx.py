@@ -13,7 +13,8 @@ from collections import OrderedDict
 token = ""
 dryRun = False
 debug = False
-ingest_url = "https://ingest.signalfx.com/v2/datapoint"
+ingest_url = "https://ingest.signalfx.com"
+dp_endpoint = "/v2/datapoint"
 
 
 def populatePayload(metric_type, metric_list, payload):
@@ -85,7 +86,7 @@ for result in results:
                     dimensions[key.replace(".", "_")] = value
     if debug:
         result["token"] = token
-        result["endpoint"] = ingest_url
+        result["endpoint"] = ingest_url+dp_endpoint
     if len(gauge) > 0 or len(counter) > 0 or len(cumulative_counter) > 0:
         if len(gauge) > 0:
             populatePayload("gauge", gauge, payload)
@@ -94,9 +95,12 @@ for result in results:
         if len(cumulative_counter) > 0:
             populatePayload("cumulative_counter", cumulative_counter, payload)
     outbuffer.append(result)
+
+target = ingest_url+dp_endpoint
+
 if not dryRun:
     r = requests.post(
-        ingest_url,
+        target,
         headers={"X-SF-TOKEN": token, "Content-Type": "application/json"},
         data=json.dumps(payload),
     )

@@ -36,17 +36,18 @@ class ConfigApp(admin.MConfigHandler):
         .../local/sfx.conf
 
         For boolean fields, may need to switch the true/false setting.
-        For text fields, if the conf file says None, set to the empty string.
+        For text fields, if the conf file says None or empty string, 
+        set to the empty string.
         """
         confDict = self.readConf("sfx.conf")
         if confDict is not None:
             for stanza, settings in confDict.items():
                 for key, val in settings.items():
-                    if key in ["access_token"] and val in [None, ""]:
+                    if key in ["access_token"] and not val:
                         val = ""
-                    if key in ["ingest_url"] and val in [None, ""]:
+                    if key in ["ingest_url"] and not val:
                         val = ""
-                    if key in ["realm"] and val in [None, ""]:
+                    if key in ["realm"] and not val:
                         val = ""
 
                     confInfo[stanza].append(key, val)
