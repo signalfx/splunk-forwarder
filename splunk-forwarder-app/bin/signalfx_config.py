@@ -19,7 +19,7 @@ class ConfigApp(admin.MConfigHandler):
 
     def setup(self):
         if self.requestedAction == admin.ACTION_EDIT:
-            for arg in ["access_token", "realm", "ingest_url"]:
+            for arg in ["access_token", "ingest_url"]:
                 self.supportedArgs.addOptArg(arg)
 
     def handleList(self, confInfo):
@@ -39,16 +39,14 @@ class ConfigApp(admin.MConfigHandler):
         For text fields, if the conf file says None or empty string, 
         set to the empty string.
         """
-        confDict = self.readConf("sfx.conf")
+        confDict = self.readConf("sfx")
         if confDict is not None:
             for stanza, settings in confDict.items():
                 for key, val in settings.items():
                     if key in ["access_token"] and not val:
                         val = ""
                     if key in ["ingest_url"] and not val:
-                        val = ""
-                    if key in ["realm"] and not val:
-                        val = ""
+                        val = "https://ingest.us0.signalfx.com"
 
                     confInfo[stanza].append(key, val)
 
@@ -57,21 +55,11 @@ class ConfigApp(admin.MConfigHandler):
         After user clicks Save on setup page, take updated parameters,
         normalize them, and save them somewhere
         """
-        ingest_url = self.callerArgs.data["ingest_url"][0]
-        ## if ingest url is not set, check realm
-        if not ingest_url:
-            realm = self.callerArgs.data["realm"][0]
-            ## if realm is not set, default to us0
-            if not realm:
-                realm = "us0"
-            self.callerArgs.data["ingest_url"][0] = (
-                "https://ingest.%s.signalfx.com" % realm.lower()
-            )
 
         # Since we are using a conf file to store parameters,
         # write them to the [SignalFxConfig] stanza
         # in splunk-forwarder/local/sfx.conf
-        self.writeConf("sfx", "SignalFxConfig", self.callerArgs.data)
+        self.writeConf("sfx", "setupentity", self.callerArgs.data)
 
 
 # initialize the handler

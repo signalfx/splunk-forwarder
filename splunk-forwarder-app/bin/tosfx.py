@@ -6,6 +6,7 @@ import csv
 import json
 import os
 import requests
+import argparse
 import ConfigParser
 
 from collections import OrderedDict
@@ -13,14 +14,14 @@ from collections import OrderedDict
 token = ""
 dryRun = False
 debug = False
-ingest_url = "https://ingest.signalfx.com"
+ingest_url = "https://ingest.us0.signalfx.com"
 dp_endpoint = "/v2/datapoint"
 
 
 def populatePayload(metric_type, metric_list, payload):
     expanded = []
     for metric, value in metric_list:
-        expanded.append(dict([("metric",metric), ("value",value)]))
+        expanded.append(dict([("metric", metric), ("value", value)]))
         if timestamp:
             expanded[-1]["timestamp"] = timestamp
     if metric_type in payload:
@@ -38,20 +39,20 @@ defaultConfig = os.path.abspath(os.path.join(os.getcwd(), "..", "default", "sfx.
 configs.read(defaultConfig)
 configs.read(localConfig)
 
-if configs.get("SignalFxConfig", "ingest_url"):
-    ingest_url = configs.get("SignalFxConfig", "ingest_url")
+if configs.get("setupentity", "ingest_url"):
+    ingest_url = configs.get("setupentity", "ingest_url")
 
-if configs.get("SignalFxConfig", "access_token"):
-    token = configs.get("SignalFxConfig", "access_token")
+if configs.get("setupentity", "access_token"):
+    token = configs.get("setupentity", "access_token")
 
 for arg in sys.argv[:]:
     if arg.startswith("dryrun="):
-        dryRun = arg[-1] in ["T", "t", "True", "true"]
+        dryRun = arg[-1] in ["T", "t"]
     elif arg.startswith("debug="):
-        debug = arg[-1] in ["T", "t", "True", "true"]
+        debug = arg[-1] in ["T", "t"]
 
 
-results, dummy, settings = inter.getOrganizedResults()
+results, _, _ = inter.getOrganizedResults()
 outbuffer = []
 
 payload = OrderedDict()
@@ -86,7 +87,7 @@ for result in results:
                     dimensions[key.replace(".", "_")] = value
     if debug:
         result["token"] = token
-        result["endpoint"] = ingest_url+dp_endpoint
+        result["endpoint"] = ingest_url + dp_endpoint
     if len(gauge) > 0 or len(counter) > 0 or len(cumulative_counter) > 0:
         if len(gauge) > 0:
             populatePayload("gauge", gauge, payload)
@@ -96,9 +97,9 @@ for result in results:
             populatePayload("cumulative_counter", cumulative_counter, payload)
     outbuffer.append(result)
 
-target = ingest_url+dp_endpoint
 
 if not dryRun:
+    target = ingest_url + dp_endpoint
     r = requests.post(
         target,
         headers={"X-SF-TOKEN": token, "Content-Type": "application/json"},
