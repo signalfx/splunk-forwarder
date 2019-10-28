@@ -1,11 +1,11 @@
 {
   "schemaVersion": "2.0.0", 
   "info": {
-    "title": "splunk-forwarder-app", 
+    "title": "signalfx-forwarder-app", 
     "id": {
       "group": null, 
-      "name": "splunk-forwarder-app", 
-      "version": "1.0.1"
+      "name": "signalfx-forwarder-app", 
+      "version": "1.0.0"
     }, 
     "author": [
       {

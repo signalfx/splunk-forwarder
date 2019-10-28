@@ -4,7 +4,7 @@
   </block>
 
   <block title="SignalFx Access Token (Required)"
-         endpoint="mycustom1/customendpoint1" entity="setupentity">
+         endpoint="signalfx-forwarder/config" entity="setupentity">
 
       <input field="access_token">
         <label>Access Token</label>
@@ -14,7 +14,7 @@
   </block>
 
   <block title="Realms, Ingest URL, and you"
-         endpoint="mycustom1/customendpoint1" entity="setupentity">
+         endpoint="signalfx-forwarder/config" entity="setupentity">
     <text>
         By default, this add-on will send to the us0 realm (https://ingest.us0.signalfx.com). 
         If you are not in this realm, you will need to set the Ingest URL config below.
@@ -22,7 +22,7 @@
         This should be in the form https://ingest.{REALM}.signalfx.com
     </text>
 
-    <input field="ingest_url" endpoint="mycustom1/customendpoint1" entity="setupentity">
+    <input field="ingest_url" endpoint="signalfx-forwarder/config" entity="setupentity">
       <label>Ingest URL</label>
       <type>text</type>
     </input>

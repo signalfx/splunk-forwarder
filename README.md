@@ -1,4 +1,4 @@
-# splunk-forwarder
+# signalfx-forwarder
 A custom search command to metricize Splunk logs and send to SignalFx
 
 
@@ -26,6 +26,13 @@ A custom search command to metricize Splunk logs and send to SignalFx
 **tosfx**:       Send the datapoints to SignalFx in a non streaming manner.
                  Does not work in realtime mode, but has higher throughput.
 
+Both commands also support arguments `dryrun` and `debug`.
+- `dryrun=t` will result in not sending any metrics to SignalFx, which is useful for
+testing your potential output in Splunk.
+- `debug=t` will log both your access token and the ingest url.
+
+These arguments can be appended to the new commands. For example, `tosfx debug=t dryrun=t`
+
 #### Macros
 
 **gauge(1)**:   Mark the field as type gauge
@@ -39,13 +46,23 @@ A custom search command to metricize Splunk logs and send to SignalFx
 
 
 ```
-index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | rename kb AS kilobytes | table _time kilobytes eventCountindexName | `gauge(kilobytes)` |`gauge(eventCount)` | streamtosfx
+index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | rename kb AS kilobytes | table _time kilobytes eventCount series host | `gauge(kilobytes)` |`gauge(eventCount)` | tosfx
 ```
 
 ```
 index=_internal group=per_index_thruput series!=_*          Look in the internal index to get the per index throughput. Filter out internal indexes.
 | rename ev AS eventCount | rename kb AS kilobytes          Rename the fields to something more human readable
-| table _time kilobytes eventCount indexName                Select just the fields _time, kilobytes, eventCount, and indexName
+| table _time kilobytes eventCount series host              Select the fields _time, kilobytes, eventCount, series, and host
 | `gauge(kilobytes)` | `gauge(eventCount)`                  Mark kilobytes and eventcount as metric fields of the type gauge
 | tosfx                                                     Send the datapoints to SignalFx
 ```
+
+When selecting fields, any fields not marked to be convereted to a SignalFx metric will turn into a dimension.
+If you do not select the `_time` field, SignalFx will add the timestamp when the metric is received.
+
+
+### Releasing
+
+#### Requirements
+You'll need to install the [Splunk Packacking Toolkit](https://dev.splunk.com/enterprise/docs/releaseapps/packagingtoolkit/installpkgtoolkit).
+Run `slim package signalfx-forwarder-app` to generate the .tar.gz and upload to the Github release.
