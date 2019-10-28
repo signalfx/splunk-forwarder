@@ -3,7 +3,7 @@ A custom search command to metricize Splunk logs and send to SignalFx
 
 
 ### Setup
-1. The sfxforwarder app needs to be installed on the search head. App installation process
+1. The signalfx-forwarder-app app needs to be installed on the search head. App installation process
    is identical to any other app (may vary depending on Splunk Cloud vs on-premise
    deployment).
 
