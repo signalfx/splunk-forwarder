@@ -1,8 +1,0 @@
-<setup>
-<block title="Add SignalFx token" endpoint="storage/passwords" entity="signalfx*" mode="iter" eai_stric="false">
-  <input field="password">
-    <label>Access Token</label>
-    <type>password</type>
-  </input>
-</block>
-</setup>
