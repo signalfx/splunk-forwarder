@@ -1,0 +1,174 @@
+---
+version: 2.1
+
+executors:
+  python37:
+    docker:
+      - image: python:3.7
+    working_directory: ~/repo
+
+  machine_image:
+    machine:
+      image: ubuntu-1604:201903-01
+
+commands:
+  install_slim:
+    steps:
+      - restore_cache:
+          key: v2-slim-venv-1.0.0
+      - run:
+          name: Install slim
+          command: |
+            pip install virtualenv
+            if [ ! -d ~/slim ]; then
+                curl -Ls http://download.splunk.com/misc/packaging-toolkit/splunk-packaging-toolkit-1.0.0.tar.gz -o /tmp/slim.tar.gz
+                virtualenv --python=/usr/bin/python2.7 ~/slim
+                source ~/slim/bin/activate
+                pip install semantic_version
+                pip install /tmp/slim.tar.gz
+            fi
+      - save_cache:
+          key: v2-slim-venv-1.0.0
+          paths:
+            - ~/slim
+
+  install_appinspect:
+    steps:
+      - restore_cache:
+          key: v2-appinspect-venv-2.0.0
+      - run:
+          name: Install appinspect
+          command: |
+            apt-get update
+            apt-get install -y gcc libxml2-dev libxslt-dev lib32z1-dev python-lxml
+            pip install virtualenv
+            if [ ! -d ~/appinspect ]; then
+                curl -Ls https://download.splunk.com/misc/appinspect/splunk-appinspect-2.0.0.tar.gz -o /tmp/appinspect.tar.gz
+                virtualenv ~/appinspect
+                source ~/appinspect/bin/activate
+                pip install /tmp/appinspect.tar.gz
+            fi
+      - save_cache:
+          key: v2-appinspect-venv-2.0.0
+          paths:
+            - ~/appinspect
+
+  install_pytest:
+    description: Install pytest and dependencies with pyenv 3.6.3.
+    steps:
+      - restore_cache:
+          key: v1-pytest-{{ checksum "tests/requirements.txt" }}
+      - run:
+          name: Install pytest and dependencies
+          command: |
+            pyenv install --skip-existing 3.6.3
+            pyenv global 3.6.3
+            if which pip; then
+                pip install --upgrade 'pip==10.0.1'
+            else
+                curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+                python get-pip.py 'pip==10.0.1'
+            fi
+            pip install -r tests/requirements.txt
+            pyenv rehash
+      - save_cache:
+          key: v1-pytest-{{ checksum "tests/requirements.txt" }}
+          paths:
+            - /opt/circleci/.pyenv
+
+jobs:
+  pylint:
+    executor: python37
+    steps:
+      - checkout
+      - run:
+          name: Install deps
+          command: |
+            pip install -r requirements.txt
+            pip install pylint==2.3.0
+      - run:
+          name: Run pylint
+          command: |
+            pylint signalfx-forwarder-app
+
+  slim:
+    executor: python37
+    steps:
+      - checkout
+      - install_slim
+      - run:
+          name: Run slim
+          command: |
+            source ~/slim/bin/activate
+            slim package --output /tmp/workspace ~/repo/signalfx-forwarder-app
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - signalfx-forwarder-app-*.tar.gz
+      - store_artifacts:
+          path: /tmp/workspace/
+
+  appinspect:
+    executor: python37
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - install_appinspect
+      - run:
+          name: Run appinspect
+          command: |
+            source ~/appinspect/bin/activate
+            splunk-appinspect inspect /tmp/workspace/signalfx-forwarder-app-*.tar.gz --mode=precert --data-format junitxml --output-file ~/results.xml
+            grep -q '<testsuite.*errors="0"' ~/results.xml || exit 1
+            grep -q '<testsuite.*failures="0"' ~/results.xml || exit 1
+      - store_test_results:
+          path: ~/results.xml
+      - store_artifacts:
+          path: ~/results.xml
+
+  integration_test:
+    executor: machine_image
+    parameters:
+      version:
+        type: string
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - install_pytest
+      - run:
+          name: Integration test
+          environment:
+            SPLUNK_VERSIONS: << parameters.version >>
+          command: |
+            cp /tmp/workspace/signalfx-forwarder-app-*.tar.gz .
+            pytest --verbose --junitxml=~/testresults/results.xml --html=~/testresults/results.html --self-contained-html tests/splunk_test.py
+      - store_test_results:
+          path: ~/testresults
+      - store_artifacts:
+          path: ~/testresults
+
+workflows:
+  build_test:
+    jobs:
+      - pylint
+      - slim
+      - appinspect:
+          requires:
+            - slim
+      - integration_test:
+          name: splunk_6.5.0_test
+          version: 6.5.0
+          requires:
+            - slim
+      - integration_test:
+          name: splunk_7.0.0_test
+          version: 7.0.0
+          requires:
+            - slim
+      - integration_test:
+          name: splunk_8.0.0_test
+          version: 8.0.0
+          requires:
+            - slim
