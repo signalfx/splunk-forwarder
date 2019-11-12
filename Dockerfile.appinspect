@@ -1,0 +1,13 @@
+FROM python:3.7
+
+RUN apt-get update && \
+    apt-get install -y gcc libxml2-dev libxslt-dev lib32z1-dev python-lxml
+
+RUN curl -Ls https://download.splunk.com/misc/appinspect/splunk-appinspect-2.0.0.tar.gz -o /tmp/appinspect.tar.gz && \
+    pip install /tmp/appinspect.tar.gz
+
+COPY ./ /code
+WORKDIR /code
+
+ENV MODE=precert
+CMD splunk-appinspect inspect signalfx-forwarder-app-*.tar.gz --mode=$MODE --data-format junitxml --output-file /code/results.xml
