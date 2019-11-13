@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+import zlib
 from collections import OrderedDict
 
 import requests
@@ -109,8 +110,9 @@ def add_result_to_payload(result, payload):
 
 def send_payload(payload, ingest_url, dp_endpoint, token):
     target = ingest_url + dp_endpoint
+    body = zlib.compress(json.dumps(payload))
     resp = requests.post(
-        target, headers={"X-SF-TOKEN": token, "Content-Type": "application/json"}, data=json.dumps(payload)
+        target, headers={"X-SF-TOKEN": token, "Content-Encoding": "gzip", "Content-Type": "application/json"}, data=body
     )
     return resp
 
