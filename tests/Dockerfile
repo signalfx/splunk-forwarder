@@ -12,4 +12,4 @@ RUN pip install -r /tmp/tests/requirements.txt
 COPY ./ /code
 WORKDIR /code
 
-CMD pytest -svx tests/splunk_test.py
+CMD pytest -n auto --verbose tests/splunk_test.py

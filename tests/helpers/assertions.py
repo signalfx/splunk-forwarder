@@ -21,7 +21,9 @@ def has_no_datapoint(fake_services, metric=None, dimensions=None, value=None, me
     return not has_datapoint(fake_services, metric, dimensions, value, metric_type, count=1)
 
 
-def has_datapoint(fake_services, metric=None, dimensions=None, value=None, metric_type=None, count=1):
+def has_datapoint(
+    fake_services, metric=None, dimensions=None, value=None, metric_type=None, count=1, has_timestamp=True
+):
     """
     Returns True if there is a datapoint seen in the fake_services backend that
     has the given attributes.  If a property is not specified it will not be
@@ -39,10 +41,23 @@ def has_datapoint(fake_services, metric=None, dimensions=None, value=None, metri
         if value is not None:
             if float(dp.value) != float(value):
                 continue
+        if has_timestamp and not dp.get("timestamp"):
+            continue
+        if not has_timestamp and dp.get("timestamp"):
+            continue
         found += 1
         if found >= count:
             return True
     return False
+
+
+def container_cmd_exit_0(container, command, **kwargs):
+    """
+    Tests if a command run against a container returns with an exit code of 0
+    """
+    code, output = container.exec_run(command, **kwargs)
+    print(output.decode("utf-8"))
+    return code == 0
 
 
 def http_status(url=None, status=None, username=None, password=None, timeout=1, **kwargs):
