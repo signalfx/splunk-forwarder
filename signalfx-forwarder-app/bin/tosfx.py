@@ -2,12 +2,13 @@ try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
+import gzip
 import json
 import logging
 import os
 import sys
-import zlib
 from collections import OrderedDict
+from io import BytesIO
 
 import requests
 
@@ -75,6 +76,8 @@ def main():
         resp = send_payload(payload=payload, ingest_url=ingest_url, dp_endpoint=dp_endpoint, token=token)
         for result in outbuffer:
             result["status"] = resp.status_code
+            if resp.status_code != 200:
+                result["response_error"] = resp.content
 
     inter.outputResults(outbuffer)
 
@@ -113,9 +116,16 @@ def add_result_to_payload(result, payload):
 
 def send_payload(payload, ingest_url, dp_endpoint, token):
     target = ingest_url + dp_endpoint
-    body = zlib.compress(json.dumps(payload))
+
+    body = BytesIO()
+    with gzip.GzipFile(fileobj=body, mode="w") as fd:
+        fd.write(json.dumps(payload))
+    body.seek(0)
+
     resp = requests.post(
-        target, headers={"X-SF-TOKEN": token, "Content-Encoding": "gzip", "Content-Type": "application/json"}, data=body
+        target,
+        headers={"X-SF-TOKEN": token, "Content-Encoding": "gzip", "Content-Type": "application/json"},
+        data=body.read(),
     )
     return resp
 
