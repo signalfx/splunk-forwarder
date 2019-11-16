@@ -6,12 +6,11 @@ from pathlib import Path
 import docker
 import netifaces as ni
 
-
 DEFAULT_TIMEOUT = int(os.environ.get("DEFAULT_TIMEOUT", 30))
 DOCKER_API_VERSION = "1.34"
 REPO_ROOT_DIR = Path(__file__).parent.parent.parent.resolve()
-PROJECT_DIR = Path(REPO_ROOT_DIR / "tests")
-TEST_SERVICES_DIR = Path(PROJECT_DIR / "test-services")
+TEST_DIR = Path(REPO_ROOT_DIR / "tests")
+SPLUNK_DOCKER_DIR = Path(TEST_DIR / "splunk-docker")
 
 
 def get_docker_client():
@@ -90,15 +89,24 @@ def run_container(image_name, wait_for_ip=True, print_logs=True, **kwargs):
 
 
 @contextmanager
-def run_service(service_name, buildargs=None, print_logs=True, path=None, dockerfile="./Dockerfile", **kwargs):
+def run_splunk(version, buildargs=None, print_logs=True, **kwargs):
     if buildargs is None:
         buildargs = {}
-    if path is None:
-        path = os.path.join(TEST_SERVICES_DIR, service_name)
+
+    buildargs["SPLUNK_VERSION"] = version
+
+    if kwargs.get("environment") is None:
+        kwargs["environment"] = {"SPLUNK_START_ARGS": "--accept-license", "SPLUNK_PASSWORD": "testing123"}
 
     client = get_docker_client()
     image, _ = retry(
-        lambda: client.images.build(path=str(path), dockerfile=dockerfile, rm=True, forcerm=True, buildargs=buildargs),
+        lambda: client.images.build(
+            path=str(REPO_ROOT_DIR),
+            dockerfile=str(SPLUNK_DOCKER_DIR / "Dockerfile"),
+            rm=True,
+            forcerm=True,
+            buildargs=buildargs,
+        ),
         docker.errors.BuildError,
     )
     with run_container(image.id, print_logs=print_logs, **kwargs) as cont:

@@ -5,15 +5,7 @@ from functools import partial as p
 import pytest
 from tests.helpers import fake_backend
 from tests.helpers.assertions import container_cmd_exit_0, has_datapoint, http_status
-from tests.helpers.util import (
-    REPO_ROOT_DIR,
-    TEST_SERVICES_DIR,
-    container_ip,
-    ensure_always,
-    get_host_ip,
-    run_service,
-    wait_for,
-)
+from tests.helpers.util import container_ip, ensure_always, get_host_ip, run_splunk, wait_for
 
 SPLUNK_VERSIONS = os.environ.get("SPLUNK_VERSIONS", "6.5.0,7.0.0,8.0.0").split(",")
 
@@ -39,19 +31,13 @@ def print_datapoints(backend):
 @pytest.mark.parametrize("splunk_version", SPLUNK_VERSIONS)
 def test_signalfx_forwarder_app(splunk_version):
     with fake_backend.start(ip_addr=get_host_ip()) as backend:
-        with run_service(
-            "splunk",
-            path=REPO_ROOT_DIR,
-            dockerfile=TEST_SERVICES_DIR / "splunk/Dockerfile",
-            buildargs={"SPLUNK_VERSION": splunk_version},
-            environment={"SPLUNK_START_ARGS": "--accept-license", "SPLUNK_PASSWORD": "testing123"},
-        ) as cont:
+        with run_splunk(splunk_version) as cont:
             splunk_host = container_ip(cont)
             assert wait_for(p(http_status, url=f"http://{splunk_host}:8000", status=[200]), 120), "service didn't start"
 
             time.sleep(5)
             assert container_cmd_exit_0(
-                cont, "/test/install-app.sh", environment={"INGEST_HOST": backend.ingest_url}, user="splunk",
+                cont, "/test/install-app.sh", environment={"INGEST_HOST": backend.ingest_url}, user="splunk"
             ), "failed to install app"
             assert wait_for(p(http_status, url=f"http://{splunk_host}:8000", status=[200]), 120), "service didn't start"
 
@@ -61,7 +47,10 @@ def test_signalfx_forwarder_app(splunk_version):
 
             try:
                 # test tosfx query with time
-                cmd = "search 'index=_internal series=* | table _time kb ev max_age | `gauge(kb)` | `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
+                cmd = (
+                    "search 'index=_internal series=* | table _time kb ev max_age | `gauge(kb)` "
+                    "| `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
+                )
                 code, output = run_splunk_cmd(cont, cmd)
                 assert code == 0, output.decode("utf-8")
                 assert wait_for(p(has_datapoint, backend, metric="kb", metric_type="gauge", has_timestamp=True))
@@ -76,7 +65,10 @@ def test_signalfx_forwarder_app(splunk_version):
 
                 # test tosfx query without time
                 backend.reset_datapoints()
-                cmd = "search 'index=_internal series=* | table kb ev max_age | `gauge(kb)` | `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
+                cmd = (
+                    "search 'index=_internal series=* | table kb ev max_age | `gauge(kb)` "
+                    "| `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
+                )
                 code, output = run_splunk_cmd(cont, cmd)
                 assert code == 0, output.decode("utf-8")
                 assert wait_for(p(has_datapoint, backend, metric="kb", metric_type="gauge", has_timestamp=False))
@@ -87,7 +79,10 @@ def test_signalfx_forwarder_app(splunk_version):
 
                 # test streamtosfx
                 backend.reset_datapoints()
-                cmd = "rtsearch 'index=_internal series=* | table _time kb ev max_age | `gauge(kb)` | `counter(ev)` | `cumulative_counter(max_age)` | streamtosfx' -detach true"
+                cmd = (
+                    "rtsearch 'index=_internal series=* | table _time kb ev max_age | `gauge(kb)` "
+                    "| `counter(ev)` | `cumulative_counter(max_age)` | streamtosfx' -detach true"
+                )
                 code, output = run_splunk_cmd(cont, cmd)
                 assert code == 0, output.decode("utf-8")
                 assert wait_for(lambda: backend.datapoints, timeout_seconds=60)
