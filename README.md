@@ -9,3 +9,8 @@ See [./signalfx-forwarder-app/README.md] for usage information.
 #### Requirements
 You'll need to install the [Splunk Packacking Toolkit](https://dev.splunk.com/enterprise/docs/releaseapps/packagingtoolkit/installpkgtoolkit).
 Run `slim package signalfx-forwarder-app` to generate the .tar.gz and upload to the Github release.
+
+### Support
+
+To file a bug report or request help please file an issue on our [Github
+repository](https://github.com/signalfx/splunk-forwarder/) for this app.

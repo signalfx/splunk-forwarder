@@ -45,7 +45,6 @@ These arguments can be appended to the new commands. For example, `tosfx debug=t
 
 #### Examples
 
-
 ```
 index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | rename kb AS kilobytes | table _time kilobytes eventCount series host | `gauge(kilobytes)` |`gauge(eventCount)` | tosfx
 ```
@@ -60,3 +59,8 @@ index=_internal group=per_index_thruput series!=_*          Look in the internal
 
 When selecting fields, any fields not marked to be convereted to a SignalFx metric will turn into a dimension.
 If you do not select the `_time` field, SignalFx will add the timestamp when the metric is received.
+
+### Support
+
+To file a bug report or request help please file an issue on our [Github
+repository](https://github.com/signalfx/splunk-forwarder/) for this app.
