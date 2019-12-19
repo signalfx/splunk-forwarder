@@ -2,22 +2,22 @@
 
 .PHONY: lint
 lint:
-	pylint signalfx-forwarder-app
+	pylint signalfx-forwarder
 
-.PHONY: slim
-slim:
-	slim package signalfx-forwarder-app
+.PHONY: package
+package:
+	slim package signalfx-forwarder
 
 .PHONY: appinspect
-appinspect: slim
-	splunk-appinspect inspect signalfx-forwarder-app-*.tar.gz --mode=precert
+appinspect: package
+	splunk-appinspect inspect signalfx-forwarder-*.tar.gz --mode=precert
 
 .PHONY: test
-test: slim
+test: package
 	docker build -t signalfx-forwarder-test:latest -f tests/Dockerfile .
 	docker run -it --rm \
 		-v /var/run/docker.sock:/var/run/docker.sock:ro \
 		signalfx-forwarder-test
 
 .PHONY: all
-all: slim appinspect lint test
+all: package appinspect lint test

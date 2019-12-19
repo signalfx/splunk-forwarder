@@ -3,7 +3,7 @@
 A custom search command to metricize Splunk events and send them to SignalFx
 
 ### Setup
-1. The signalfx-forwarder-app app needs to be installed on the search head. App
+1. The signalfx-forwarder app needs to be installed on the search head. App
    installation process is identical to any other app (may vary depending on
    Splunk Cloud vs on-premise deployment).
 
@@ -18,11 +18,6 @@ A custom search command to metricize Splunk events and send them to SignalFx
 ### Features
 
 #### Custom Search Commands
-
-**streamtosfx**: Send datapoints to SignalFx as soon as they’re retrieved.
-                 Fields marked using the macros listed below will be used as metric names. If
-                 the field _time is available, it will be used. If not the current timestamp is used.
-                 The rest of the fields are treated as dimensions. Works best with realtime mode.
 
 **tosfx**:       Send the datapoints to SignalFx in a non streaming manner.
                  Does not work in realtime mode, but has higher throughput.

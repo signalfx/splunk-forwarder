@@ -1,3 +1,7 @@
 *.tar.gz
 __pycache__/
+*.pyc
 .pytest_cache
+virtualenv/
+.mypy_cache/
+tmp/

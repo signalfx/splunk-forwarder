@@ -77,25 +77,6 @@ def test_signalfx_forwarder_app(splunk_version):
                     p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=False)
                 )
 
-                # test streamtosfx
-                backend.reset_datapoints()
-                cmd = (
-                    "rtsearch 'index=_internal series=* | table _time kb ev max_age | `gauge(kb)` "
-                    "| `counter(ev)` | `cumulative_counter(max_age)` | streamtosfx' -detach true"
-                )
-                code, output = run_splunk_cmd(cont, cmd)
-                assert code == 0, output.decode("utf-8")
-                assert wait_for(lambda: backend.datapoints, timeout_seconds=60)
-                assert wait_for(p(has_datapoint, backend, metric="kb", metric_type="gauge", has_timestamp=True))
-                assert wait_for(p(has_datapoint, backend, metric="ev", metric_type="counter", has_timestamp=True))
-                assert wait_for(
-                    p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=True)
-                )
-
-                # check that datapoints are streaming
-                num_datapoints = len(backend.datapoints)
-                assert wait_for(lambda: len(backend.datapoints) > num_datapoints, timeout_seconds=60)
-
             finally:
                 print_datapoints(backend)
                 code, output = cont.exec_run("cat /opt/splunk/var/log/splunk/python.log")

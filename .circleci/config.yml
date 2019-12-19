@@ -89,7 +89,7 @@ jobs:
       - run:
           name: Run pylint
           command: |
-            pylint signalfx-forwarder-app
+            pylint signalfx-forwarder --ignore lib
 
   slim:
     executor: python37
@@ -100,11 +100,11 @@ jobs:
           name: Run slim
           command: |
             source ~/slim/bin/activate
-            slim package --output /tmp/workspace ~/repo/signalfx-forwarder-app
+            slim package --output /tmp/workspace ~/repo/signalfx-forwarder
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
-            - signalfx-forwarder-app-*.tar.gz
+            - signalfx-forwarder-*.tar.gz
       - store_artifacts:
           path: /tmp/workspace/
 
@@ -119,7 +119,7 @@ jobs:
           name: Run appinspect
           command: |
             source ~/appinspect/bin/activate
-            splunk-appinspect inspect /tmp/workspace/signalfx-forwarder-app-*.tar.gz --mode=precert --data-format junitxml --output-file ~/results.xml
+            splunk-appinspect inspect /tmp/workspace/signalfx-forwarder-*.tar.gz --mode=precert --data-format junitxml --output-file ~/results.xml
             grep -q '<testsuite.*errors="0"' ~/results.xml || exit 1
             grep -q '<testsuite.*failures="0"' ~/results.xml || exit 1
       - store_test_results:
@@ -142,7 +142,7 @@ jobs:
           environment:
             SPLUNK_VERSIONS: << parameters.version >>
           command: |
-            cp /tmp/workspace/signalfx-forwarder-app-*.tar.gz .
+            cp /tmp/workspace/signalfx-forwarder-*.tar.gz .
             pytest --verbose --junitxml=~/testresults/results.xml --html=~/testresults/results.html --self-contained-html tests/splunk_test.py
       - store_test_results:
           path: ~/testresults

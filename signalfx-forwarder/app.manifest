@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1.0.0",
   "info": {
-    "title": "signalfx-forwarder-app",
+    "title": "signalfx-forwarder",
     "id": {
       "group": null,
-      "name": "signalfx-forwarder-app",
+      "name": "signalfx-forwarder",
       "version": "1.0.0"
     },
     "author": [
@@ -42,10 +42,5 @@
   "tasks": null,
   "inputGroups": null,
   "incompatibleApps": null,
-  "platformRequirements": null,
-  "supportedDeployments": [
-    "_standalone",
-    "_distributed"
-  ],
-  "targetWorkloads": null
+  "platformRequirements": null
 }
