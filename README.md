@@ -2,7 +2,7 @@
 A custom search command to metricize Splunk logs and send to SignalFx
 
 
-See [./signalfx-forwarder/README.md](./signalfx-forwarder/README.md) for usage information.
+See [./signalfx-forwarder-app/README.md](./signalfx-forwarder-app/README.md) for usage information.
 
 ### Releasing
 
