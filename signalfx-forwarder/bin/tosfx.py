@@ -48,7 +48,11 @@ class ToSFXCommand(EventingCommand):
 
         configs.read(local_config)
 
-        read_conf_value = lambda f: configs.get("setupentity", f)
+        def read_conf_value(field):
+            try:
+                return configs.get("setupentity", field)
+            except configparser.NoOptionError:
+                return None
 
         if not self.signalfx_realm:
             self.signalfx_realm = read_conf_value("signalfx_realm")
