@@ -4,7 +4,7 @@
     "title": "signalfx-forwarder",
     "id": {
       "group": null,
-      "name": "signalfx-forwarder",
+      "name": "signalfx-forwarder-app",
       "version": "1.0.0"
     },
     "author": [

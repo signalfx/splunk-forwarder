@@ -89,7 +89,7 @@ jobs:
       - run:
           name: Run pylint
           command: |
-            pylint signalfx-forwarder --ignore lib
+            pylint signalfx-forwarder-app --ignore lib
 
   slim:
     executor: python37
@@ -100,7 +100,7 @@ jobs:
           name: Run slim
           command: |
             source ~/slim/bin/activate
-            slim package --output /tmp/workspace ./signalfx-forwarder
+            slim package --output /tmp/workspace ./signalfx-forwarder-app
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
