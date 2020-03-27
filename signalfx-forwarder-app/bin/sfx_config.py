@@ -76,9 +76,10 @@ class ConfigApp(admin.MConfigHandler):
             if ingest_url and ingest_url[0] and not ingest_url[0].startswith("https"):
                 raise admin.ArgValidationException("ingest_url must be https in Splunk Cloud")
 
-        access_token = data.pop("access_token")
-        if access_token:
-            self.save_access_token(access_token)
+        access_token_list = data.pop("access_token")
+        if not access_token_list:
+            raise admin.ArgValidationException("required access token is missing")
+        self.save_access_token(access_token_list[0])
 
         # Since we are using a conf file to store parameters,
         # write them to the [SignalFxConfig] stanza
