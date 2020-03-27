@@ -19,7 +19,7 @@ from sfx_utils import STORAGE_PASSWORD_NAME, get_access_token  # isort:skip
 from splunklib.client import Service  # isort:skip
 
 
-APP_NAME = "signalfx-forwarder"
+APP_NAME = "signalfx-forwarder-app"
 
 
 class ConfigApp(admin.MConfigHandler):
