@@ -40,6 +40,7 @@ class ToSFXCommand(EventingCommand):
     dry_run = Option(validate=validators.Boolean(), default=False)
     signalfx_realm = Option()
     ingest_url = Option()
+    ssl_verify = Option(default="true")
     dp_endpoint = Option(default="/v2/datapoint")
 
     def ensure_default_config(self):
@@ -80,7 +81,7 @@ class ToSFXCommand(EventingCommand):
             resp = send_payload(
                 payload=payload,
                 target_url=compose_ingest_url(self.signalfx_realm, self.ingest_url, self.dp_endpoint),
-                token=self.access_token,
+                token=self.access_token, ssl_verify=self.ssl_verify
             )
             for event in out:
                 event["status"] = resp.status_code
@@ -144,7 +145,7 @@ def add_event_to_payload(event, payload):
         populate_payload("cumulative_counter", cumulative_counters, payload, timestamp, dimensions)
 
 
-def send_payload(payload, target_url, token):
+def send_payload(payload, target_url, token, ssl_verify):
     body = BytesIO()
     with gzip.GzipFile(fileobj=body, mode="w") as fd:
         fd.write(json.dumps(payload))
@@ -153,7 +154,7 @@ def send_payload(payload, target_url, token):
     resp = requests.post(
         target_url,
         headers={"X-SF-TOKEN": token, "Content-Encoding": "gzip", "Content-Type": "application/json"},
-        data=body.read(),
+        data=body.read(), verify=ssl_verify
     )
     return resp
 
