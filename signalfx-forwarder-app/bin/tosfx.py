@@ -40,7 +40,7 @@ class ToSFXCommand(EventingCommand):
     dry_run = Option(validate=validators.Boolean(), default=False)
     signalfx_realm = Option()
     ingest_url = Option()
-    ssl_verify = Option(default="true")
+    ssl_verify = Option(validate=validators.Boolean(),default=True)
     dp_endpoint = Option(default="/v2/datapoint")
 
     def ensure_default_config(self):
@@ -63,6 +63,8 @@ class ToSFXCommand(EventingCommand):
         self.logger.error("getting access token")
         if not self.access_token:
             self.access_token = get_access_token(self.service)
+
+        self.ssl_verify = get_access_token(self.ssl_verify)
 
     def transform(self, records):
         self.ensure_default_config()
