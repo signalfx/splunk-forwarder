@@ -2,9 +2,9 @@
 version: 2.1
 
 executors:
-  python37:
+  python38:
     docker:
-      - image: python:3.7
+      - image: python:3.8
     working_directory: ~/repo
 
   machine_image:
@@ -35,7 +35,7 @@ commands:
   install_appinspect:
     steps:
       - restore_cache:
-          key: v2-appinspect-venv-2.0.0
+          key: v3-appinspect-venv-2.0.0
       - run:
           name: Install appinspect
           command: |
@@ -43,56 +43,62 @@ commands:
             apt-get install -y gcc libxml2-dev libxslt-dev lib32z1-dev python-lxml
             pip install virtualenv
             if [ ! -d ~/appinspect ]; then
+                apt-get install -y python3.7-dev
                 curl -Ls https://download.splunk.com/misc/appinspect/splunk-appinspect-2.0.0.tar.gz -o /tmp/appinspect.tar.gz
-                virtualenv ~/appinspect
+                virtualenv --python=/usr/bin/python3.7 ~/appinspect
                 source ~/appinspect/bin/activate
                 pip install /tmp/appinspect.tar.gz
             fi
       - save_cache:
-          key: v2-appinspect-venv-2.0.0
+          key: v3-appinspect-venv-2.0.0
           paths:
             - ~/appinspect
 
   install_pytest:
-    description: Install pytest and dependencies with pyenv 3.6.3.
+    description: Install pytest and dependencies with pyenv
+    parameters:
+      python_version:
+        type: string
+        default: "3.8.0"
     steps:
       - restore_cache:
-          key: v1-pytest-{{ checksum "tests/requirements.txt" }}
+          key: v1-pytest-{{ checksum "tests/requirements.txt" }}-<< parameters.python_version >>
       - run:
           name: Install pytest and dependencies
           command: |
-            pyenv install --skip-existing 3.6.3
-            pyenv global 3.6.3
+            cd $PYENV_ROOT && git pull && cd -
+            pyenv install --skip-existing 3.8.0
+            pyenv global 3.8.0
             if which pip; then
-                pip install --upgrade 'pip==10.0.1'
+                pip install --upgrade 'pip==20.0.2'
             else
                 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-                python get-pip.py 'pip==10.0.1'
+                python get-pip.py 'pip==20.0.2'
             fi
             pip install -r tests/requirements.txt
             pyenv rehash
       - save_cache:
-          key: v1-pytest-{{ checksum "tests/requirements.txt" }}
+          key: v1-pytest-{{ checksum "tests/requirements.txt" }}-<< parameters.python_version >>
           paths:
             - /opt/circleci/.pyenv
 
 jobs:
   pylint:
-    executor: python37
+    executor: python38
     steps:
       - checkout
       - run:
           name: Install deps
           command: |
             pip install -r requirements.txt
-            pip install pylint==2.3.0
+            pip install pylint==2.5.3
       - run:
           name: Run pylint
           command: |
             pylint signalfx-forwarder-app --ignore lib
 
   slim:
-    executor: python37
+    executor: python38
     steps:
       - checkout
       - install_slim
@@ -109,7 +115,7 @@ jobs:
           path: /tmp/workspace/
 
   appinspect:
-    executor: python37
+    executor: python38
     steps:
       - checkout
       - attach_workspace:
