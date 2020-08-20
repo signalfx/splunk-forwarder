@@ -2,7 +2,7 @@
 
 .PHONY: lint
 lint:
-	pylint signalfx-forwarder-app
+	pylint signalfx-forwarder-app --ignore lib
 
 .PHONY: package
 package:
