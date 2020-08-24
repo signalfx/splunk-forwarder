@@ -118,7 +118,7 @@ def add_event_to_payload(event, payload):
     cumulative_counters = []
     dimensions = dict()
     timestamp = None
-    for key, value in event.iteritems():
+    for key, value in event.items():
         if value != "":
             if key.startswith("gauge_"):
                 try:
@@ -147,7 +147,7 @@ def add_event_to_payload(event, payload):
 def send_payload(payload, target_url, token):
     body = BytesIO()
     with gzip.GzipFile(fileobj=body, mode="w") as fd:
-        fd.write(json.dumps(payload))
+        fd.write(json.dumps(payload).encode('utf-8'))
     body.seek(0)
 
     resp = requests.post(
