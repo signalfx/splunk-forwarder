@@ -34,8 +34,11 @@ commands:
 
   install_appinspect:
     steps:
+      - run:
+          name: Download appinspect
+          command: curl -sSL https://download.splunk.com/misc/appinspect/splunk-appinspect-latest.tar.gz -o /tmp/appinspect.tar.gz
       - restore_cache:
-          key: v3-appinspect-venv-2.3.0
+          key: v1-appinspect-venv-{{ checksum "/tmp/appinspect.tar.gz" }}
       - run:
           name: Install appinspect
           command: |
@@ -44,13 +47,12 @@ commands:
             pip install virtualenv
             if [ ! -d ~/appinspect ]; then
                 apt-get install -y python3.7-dev
-                curl -Ls https://download.splunk.com/misc/appinspect/splunk-appinspect-2.3.0.tar.gz -o /tmp/appinspect.tar.gz
                 virtualenv --python=/usr/bin/python3.7 ~/appinspect
                 source ~/appinspect/bin/activate
                 pip install /tmp/appinspect.tar.gz
             fi
       - save_cache:
-          key: v3-appinspect-venv-2.3.0
+          key: v1-appinspect-venv-{{ checksum "/tmp/appinspect.tar.gz" }}
           paths:
             - ~/appinspect
 
@@ -124,14 +126,15 @@ jobs:
       - run:
           name: Run appinspect
           command: |
+            mkdir -p ~/testresults
             source ~/appinspect/bin/activate
-            splunk-appinspect inspect /tmp/workspace/signalfx-forwarder-*.tar.gz --mode=precert --data-format junitxml --output-file ~/results.xml
-            grep -q '<testsuite.*errors="0"' ~/results.xml || exit 1
-            grep -q '<testsuite.*failures="0"' ~/results.xml || exit 1
+            splunk-appinspect inspect /tmp/workspace/signalfx-forwarder-*.tar.gz --mode=precert --data-format junitxml --output-file ~/testresults/results.xml
+            grep -q '<testsuite.*errors="0"' ~/testresults/results.xml || exit 1
+            grep -q '<testsuite.*failures="0"' ~/testresults/results.xml || exit 1
       - store_test_results:
-          path: ~/results.xml
+          path: ~/testresults
       - store_artifacts:
-          path: ~/results.xml
+          path: ~/testresults
 
   integration_test:
     executor: machine_image
