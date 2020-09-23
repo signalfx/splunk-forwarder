@@ -34,7 +34,7 @@ class ConfigApp(admin.MConfigHandler):
 
     def setup(self):
         if self.requestedAction == admin.ACTION_EDIT:
-            for arg in ["access_token", "signalfx_realm", "ingest_url"]:
+            for arg in ["access_token", "signalfx_realm", "ingest_url", "ssl_verify"]:
                 self.supportedArgs.addOptArg(arg)
 
     def handleList(self, conf_info):  # pylint:disable=invalid-name
@@ -80,6 +80,8 @@ class ConfigApp(admin.MConfigHandler):
         if not access_token_list:
             raise admin.ArgValidationException("required access token is missing")
         self.save_access_token(access_token_list[0])
+		
+		ssl_verify = data.pop("ssl_verify")
 
         # Since we are using a conf file to store parameters,
         # write them to the [SignalFxConfig] stanza
