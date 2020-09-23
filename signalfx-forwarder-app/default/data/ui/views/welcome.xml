@@ -1,0 +1,12 @@
+<dashboard>
+  <label>Welcome</label>
+  <row>
+    <panel>
+      <html>
+        <div>
+            The SignalFx Forwarder for Splunk provides the <code>tosfx</code> command for exporting Splunk data to SignalFx.<br/><br/>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

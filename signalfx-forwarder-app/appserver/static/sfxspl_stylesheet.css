@@ -1,0 +1,11 @@
+.upper_gap {
+    margin-top: 3px;
+}
+.pad_left {
+    margin-top: 2px;
+    padding-left: 20px;
+}
+
+#success_message, #error_message {
+    display: none;
+}

@@ -11,9 +11,6 @@ splunk list user -auth admin:testing123
 
 splunk install app ${SCRIPT_DIR}/signalfx-forwarder-*.tar.gz
 
-# create app config
-mkdir -p /opt/splunk/etc/apps/signalfx-forwarder-app/local
-echo -e "[setupentity]\nsignalfx_realm = \ningest_url = ${INGEST_HOST}" > /opt/splunk/etc/apps/signalfx-forwarder-app/local/sfx.conf
-echo -e "[install]\nis_configured = 1" > /opt/splunk/etc/apps/signalfx-forwarder-app/local/app.conf
+curl -k  https://admin:testing123@localhost:8089/servicesNS/nobody/signalfx-forwarder-app/storage/collections/data/sfx_ingest_config -XPOST -H'Content-Type: application/json' -d "$(printf '{"ingest_url": "%s"}' "$INGEST_HOST")"
 
 splunk restart

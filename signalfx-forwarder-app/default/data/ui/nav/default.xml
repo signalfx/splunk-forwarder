@@ -1,3 +1,5 @@
 <nav search_view="search">
-  <view name="search" default='true' />
+  <view name="welcome" default='true' />
+  <view name="configuration" />
+  <view name="search" />
 </nav>

@@ -1,0 +1,53 @@
+<dashboard script="configuration.js" stylesheet="configuration.css" hideFooter="true" hideEdit="true">
+  <label>Configuration</label>
+  <row>
+    <panel>
+      <html>
+        <style>
+          .dashboard-row .dashboard-panel {
+            background: inherit;
+          }
+        </style>
+        <div class="configuration-container" id="configuration-container" style="white-space:nowrap">
+          <div id="fetch-error-message" class="fetch-error-message">
+            <img id="fetch-error-icon" class="error-icon" width="20px" height="20px" src="/static/app/signalfx-forwarder-app/images/error.svg"/>
+            <span> Failed to fetch configurations. Refresh the page to try again </span>
+          </div>
+          <div>
+            <label class="access-token-label">SignalFx Access Token:</label>
+            <input id="access-token-input" placeholder="SignalFx Access Token" class="access-token-input" type="text" />
+            <span id="access-token-error" class="validation-error"> Missing access token </span>
+          </div>
+          <div>
+            <span class="access-token-instruction">
+              Create a token in SignalFx and paste the value here. <a href="https://docs.splunk.com/Documentation/SfxAddon/latest/Install/Configure">Learn more.</a>
+            </span>
+          </div>
+          <div>
+            <label class="ingest-url-label">SignalFx Ingest URL:</label>
+            <input id="ingest-url-input" class="ingest-url-input" type="text" placeholder="https://ingest.{realm}.signalfx.com"/>
+            <span id="ingest-url-error" class="validation-error"> Invalid or missing Ingest URL </span>
+          </div>
+          <div>
+            <span class="ingest-url-instruction">
+              Provide your realm Ingest endpoint. <a href="https://docs.splunk.com/Documentation/SfxAddon/latest/Install/Configure">Learn more.</a>
+            </span>
+          </div>
+          <input type="hidden" id="_key1" name="key" value="" />
+          <div class="buttons">
+            <input id="delete" class="btn btn-danger" value="Clear" type="button"/>
+            <input id="submit" class="btn btn-primary" value="Save" type="button"/>
+            <span id="submit-success-message" class="submit-message" style="display: none;">
+              <img id="submit-success-icon" class="success-icon" width="20px" height="20px" src="/static/app/signalfx-forwarder-app/images/success.svg"/>
+              <span> Configuration saved successfully </span>
+            </span>
+            <span id="submit-error-message" class="submit-message">
+              <img id="submit-error-icon" class="error-icon" width="20px" height="20px" src="/static/app/signalfx-forwarder-app/images/error.svg" />
+              <span> Unable to save configuration, try again </span>
+            </span>
+          </div>
+        </div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

@@ -5,17 +5,17 @@
 # run arbitrary code
 extension-pkg-whitelist=signalfx.generated_protocol_buffers.signal_fx_protocol_buffers_pb2,netifaces,ujson
 
-# Add files or directories to the blacklist. They should be base names, not
+# Add files or directories to the deny list. They should be base names, not
 # paths.
 ignore=CVS,virtualenv,.git,__pycache__,.idea
 
-# Add files or directories matching the regex patterns to the blacklist. The
+# Add files or directories matching the regex patterns to the deny list. The
 # regex matches against base names, not paths.
 ignore-patterns=.*\.egg-info
 
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
-init-hook='import sys; sys.path.append("signalfx-forwarder-app/bin")'
+#init-hook=
 
 # Use multiple processes to speed up Pylint.
 jobs=1
@@ -139,9 +139,9 @@ disable=print-statement,
         too-many-branches,
         too-few-public-methods,
 		ungrouped-imports,
-        bad-continuation,  # We use black so this shouldn't ever be relevant
+        wrong-import-order,
         wrong-import-position,
-        wrong-import-order
+        bad-continuation  # We use black so this shouldn't ever be relevant
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -423,7 +423,8 @@ good-names=e,
            do_PUT,
            _,
            logger,
-           runner
+           runner,
+           T
 
 # Include a hint for the correct naming format with invalid-name
 include-naming-hint=no
