@@ -19,6 +19,10 @@
       <label>Access Token</label>
       <type>text</type>
     </input>
+	<input field="ssl_verify" endpoint="signalfx-forwarder/sfx_config" entity="setupentity">
+      <label>SSL Verify</label>
+      <type>bool</type>
+    </input>
 
 
   </block>
