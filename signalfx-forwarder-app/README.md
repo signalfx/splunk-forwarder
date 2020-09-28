@@ -11,7 +11,7 @@ A custom search command to metricize Splunk events and send them to SignalFx
    token and your ingest URL, if not in the US0 realm.  The form of the URL is
    `https://ingest.<YOUR_REALM>.signalfx.com`.
 
-3. You can now use the custom search commands "tosfx" and "streamtosfx"
+3. You can now use the custom search command "tosfx".
 
 **Note** Setup can be re-ran via "Manage apps" and selecting "set up" for the app.
 
