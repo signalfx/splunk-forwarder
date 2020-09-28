@@ -35,7 +35,7 @@ commands:
   install_appinspect:
     steps:
       - restore_cache:
-          key: v3-appinspect-venv-2.0.0
+          key: v3-appinspect-venv-2.3.0
       - run:
           name: Install appinspect
           command: |
@@ -44,13 +44,13 @@ commands:
             pip install virtualenv
             if [ ! -d ~/appinspect ]; then
                 apt-get install -y python3.7-dev
-                curl -Ls https://download.splunk.com/misc/appinspect/splunk-appinspect-2.0.0.tar.gz -o /tmp/appinspect.tar.gz
+                curl -Ls https://download.splunk.com/misc/appinspect/splunk-appinspect-2.3.0.tar.gz -o /tmp/appinspect.tar.gz
                 virtualenv --python=/usr/bin/python3.7 ~/appinspect
                 source ~/appinspect/bin/activate
                 pip install /tmp/appinspect.tar.gz
             fi
       - save_cache:
-          key: v3-appinspect-venv-2.0.0
+          key: v3-appinspect-venv-2.3.0
           paths:
             - ~/appinspect
 
@@ -90,12 +90,12 @@ jobs:
       - run:
           name: Install deps
           command: |
-            pip install -r requirements.txt
+            pip install -r tests/requirements.txt
             pip install pylint==2.5.3
       - run:
           name: Run pylint
           command: |
-            pylint signalfx-forwarder-app --ignore lib
+            pylint signalfx-forwarder-app/bin --ignore lib
 
   slim:
     executor: python38

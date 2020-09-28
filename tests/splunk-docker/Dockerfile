@@ -2,6 +2,8 @@ ARG SPLUNK_VERSION
 
 FROM splunk/splunk:${SPLUNK_VERSION}
 
+RUN test -f /usr/bin/curl || (apt update && apt install -y curl)
+
 ENV SPLUNK_START_ARGS=--accept-license
 ENV SPLUNK_PASSWORD=testing123
 ENV PATH=$PATH:/opt/splunk/bin

@@ -1,2 +1,0 @@
-requests==2.22.0
-splunk-sdk==1.6.11

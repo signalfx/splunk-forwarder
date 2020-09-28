@@ -5,18 +5,19 @@ import sys
 from collections import OrderedDict
 from io import BytesIO
 
-import requests
+current_path = os.path.dirname(__file__)  # pylint: disable=invalid-name
+sys.path.append(os.path.join(current_path, "libs"))
+sys.path.append(os.path.join(current_path, "libs", "sfxlib"))
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "lib"))
+from splunklib.searchcommands import (  # isort:skip pylint: disable=import-error
+    Configuration,
+    EventingCommand,
+    Option,
+    dispatch,
+    validators,
+)
 
-from splunklib.searchcommands import Configuration, EventingCommand, Option, dispatch, validators  # isort:skip
-
-from sfx_utils import get_access_token  # isort:skip
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
+import requests  # isort:skip
 
 
 @Configuration()
@@ -38,30 +39,53 @@ class ToSFXCommand(EventingCommand):
     access_token = Option()
     debug = Option(validate=validators.Boolean(), default=False)
     dry_run = Option(validate=validators.Boolean(), default=False)
-    signalfx_realm = Option()
     ingest_url = Option()
     dp_endpoint = Option(default="/v2/datapoint")
 
+    SPLUNK_PASSWORD_REALM = "realm"
+    SPLUNK_PASSWORD_USER_NAME = "username"
+    SPLUNK_PASSWORD_CLEAR_PASSWORD = "clear_password"
+    SPLUNK_KV_STORE_SFX_CONFIG_COLLECTION_NAME = "sfx_ingest_config"
+    SPLUNK_SFX_CONFIG_INGEST_URL_KEY = "ingest_url"
+    SPLUNK_PASSWORDS_STORAGE_SFX_ACCESS_TOKEN_REALM = "sfx_ingest_command"
+    SPLUNK_PASSWORDS_STORAGE_SFX_ACCESS_TOKEN_USER_NAME = "access_token"
+
     def ensure_default_config(self):
-        configs = configparser.ConfigParser(allow_no_value=True)
-        local_config = os.path.abspath(os.path.join(os.getcwd(), "..", "local", "sfx.conf"))
-
-        configs.read(local_config)
-
-        def read_conf_value(field):
-            try:
-                return configs.get("setupentity", field)
-            except configparser.NoOptionError:
-                return None
-
-        if not self.signalfx_realm:
-            self.signalfx_realm = read_conf_value("signalfx_realm")
         if not self.ingest_url:
-            self.ingest_url = read_conf_value("ingest_url")
+            self.ingest_url = self.get_sfx_ingest_url()
 
         self.logger.error("getting access token")
         if not self.access_token:
-            self.access_token = get_access_token(self.service)
+            self.access_token = self.get_access_token()
+
+    def get_access_token(self):
+        try:
+            for credential in self.service.storage_passwords:
+                if (
+                    credential.content.get(self.SPLUNK_PASSWORD_REALM, None)
+                    == self.SPLUNK_PASSWORDS_STORAGE_SFX_ACCESS_TOKEN_REALM
+                    and credential.content.get(self.SPLUNK_PASSWORD_USER_NAME, None)
+                    == self.SPLUNK_PASSWORDS_STORAGE_SFX_ACCESS_TOKEN_USER_NAME
+                ):
+                    return credential.content.get(self.SPLUNK_PASSWORD_CLEAR_PASSWORD, None)
+        except Exception as e:  # pylint:disable=broad-except
+            self.logger.error("status=error, action=get_sfx_access_token, error_msg=%s", e, exc_info=True)
+        return None
+
+    def get_sfx_ingest_url(self):
+        try:
+            sfx_api_config_collection = self.service.kvstore.get(self.SPLUNK_KV_STORE_SFX_CONFIG_COLLECTION_NAME, None)
+            if sfx_api_config_collection is not None:
+                collection = self.service.kvstore[self.SPLUNK_KV_STORE_SFX_CONFIG_COLLECTION_NAME]
+                # will return a list of settings, we should only have one.
+                # We'll grab the 'last' / most recent one by default
+                sfx_ingest_config_records = collection.data.query()
+                if sfx_ingest_config_records:
+                    sfx_ingest_config_latest = sfx_ingest_config_records[-1]
+                    return sfx_ingest_config_latest.get(self.SPLUNK_SFX_CONFIG_INGEST_URL_KEY, None)
+        except Exception as e:  # pylint:disable=broad-except
+            self.logger.error("status=error, action=get_sfx_ingest_url, error_msg=%s", str(e), exc_info=True)
+        return None
 
     def transform(self, records):
         self.ensure_default_config()
@@ -79,7 +103,7 @@ class ToSFXCommand(EventingCommand):
         if not self.dry_run:
             resp = send_payload(
                 payload=payload,
-                target_url=compose_ingest_url(self.signalfx_realm, self.ingest_url, self.dp_endpoint),
+                target_url=compose_ingest_url(self.ingest_url, self.dp_endpoint),
                 token=self.access_token,
             )
             for event in out:
@@ -91,10 +115,7 @@ class ToSFXCommand(EventingCommand):
             yield event
 
 
-def compose_ingest_url(realm, ingest_base_url, dp_endpoint):
-    if realm:
-        ingest_base_url = "https://ingest.%s.signalfx.com" % (realm,)
-
+def compose_ingest_url(ingest_base_url, dp_endpoint):
     return ingest_base_url.rstrip("/") + dp_endpoint
 
 
@@ -147,7 +168,7 @@ def add_event_to_payload(event, payload):
 def send_payload(payload, target_url, token):
     body = BytesIO()
     with gzip.GzipFile(fileobj=body, mode="w") as fd:
-        fd.write(json.dumps(payload).encode('utf-8'))
+        fd.write(json.dumps(payload).encode("utf-8"))
     body.seek(0)
 
     resp = requests.post(

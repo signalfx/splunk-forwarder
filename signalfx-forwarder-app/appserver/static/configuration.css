@@ -1,0 +1,133 @@
+.upper_gap {
+    margin-top: 3px;
+}
+.pad_left {
+    margin-top: 2px;
+    padding-left: 20px;
+}
+
+.configuration-container {
+    white-space: nowrap;
+}
+
+.access-token-label {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.access-token-input {
+    display: inline-block;
+    width: 300px;
+    margin-right: 10px;
+    outline: none;
+}
+
+.access-token-instruction {
+    margin-left: 160px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    width: 500px;
+    white-space: normal;
+    display: block;
+}
+
+.ingest-url-label {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.ingest-url-input {
+    width: 300px;
+    margin-right: 10px;
+    margin-left: 35px;
+}
+
+.ingest-url-instruction {
+    margin-left: 160px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    width: 500px;
+    white-space: normal;
+    display: block;
+}
+
+.btn-danger {
+    color: red;
+    white-space: nowrap;
+    width: 100px;
+    height: 30px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+    display: none;
+}
+
+.btn-primary {
+    white-space: nowrap;
+    width: 100px;
+    height: 30px;
+    margin-top: 10px;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    display: none;
+}
+
+.buttons {
+    margin-left: 322px;
+    margin-top: 28px;
+}
+
+.fetch-error-message {
+    display: none;
+    margin-bottom: 10px;
+}
+
+.validation-error {
+    display: none;
+    margin-right:10px;
+    margin-bottom:0px;
+    color:red;
+    animation: fadeIn;
+    animation-duration: 1s;
+}
+
+.submit-message {
+    display: none;
+    margin-left: 10px;
+}
+
+.tos-container {
+    margin-top: 30px;
+}
+
+.tos-input {
+    vertical-align: -3px;
+}
+
+.tos-label {
+    display: inline-block;
+    font-size: 12px;
+}
+
+.tos-disclosure {
+    font-size: 12px;
+}
+
+.validation-error-nudge {
+    animation: shake;
+    animation-duration: 6s;
+}
+
+@keyframes shake{
+    0%{transform: rotate(0deg)}
+    3%{transform: rotate(-4deg)}
+    4%{transform: rotate(4deg)}
+    5%{transform: rotate(-4deg)}
+    6%{transform: rotate(4deg)}
+    7%{transform: rotate(0deg)}
+    100%{transform: rotate(0deg)}
+}
+
+@keyframes fadeIn{
+    0% {opacity:0;}
+    100% {opacity:1;}
+}
