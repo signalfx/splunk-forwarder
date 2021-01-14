@@ -3,11 +3,10 @@ import time
 from functools import partial as p
 
 import pytest
-from tests.helpers import fake_backend
 from tests.helpers.assertions import container_cmd_exit_0, has_datapoint, http_status
-from tests.helpers.util import container_ip, ensure_always, get_host_ip, run_splunk, wait_for
+from tests.helpers.util import container_ip, ensure_always, run_splunk, wait_for
 
-SPLUNK_VERSIONS = os.environ.get("SPLUNK_VERSIONS", "6.5.0,7.0.0,8.0.0").split(",")
+SPLUNK_VERSIONS = os.environ.get("SPLUNK_VERSIONS", "6.5.0,7.0.0,8.0.0,8.1.0-debian").split(",")
 
 
 def run_splunk_cmd(cont, cmd):
@@ -30,56 +29,63 @@ def print_datapoints(backend):
 
 @pytest.mark.parametrize("splunk_version", SPLUNK_VERSIONS)
 def test_signalfx_forwarder_app(splunk_version):
-    with fake_backend.start(ip_addr=get_host_ip()) as backend:
-        with run_splunk(splunk_version) as cont:
-            splunk_host = container_ip(cont)
-            assert wait_for(p(http_status, url=f"http://{splunk_host}:8000", status=[200]), 120), "service didn't start"
+    with run_splunk(splunk_version) as [cont, backend]:
+        splunk_host = container_ip(cont)
+        assert wait_for(p(http_status, url=f"http://{splunk_host}:8000", status=[200]), 120), "service didn't start"
 
-            time.sleep(5)
-            assert container_cmd_exit_0(
-                cont, "/test/install-app.sh", environment={"INGEST_HOST": backend.ingest_url}, user="splunk"
-            ), "failed to install app"
-            assert wait_for(p(http_status, url=f"http://{splunk_host}:8000", status=[200]), 120), "service didn't start"
+        time.sleep(5)
 
+        # add certs for fake backend to splunk python
+        cert_path = cont.exec_run("splunk cmd python -m requests.certs", stderr=False).output.decode("utf-8")
+        assert cert_path, "failed to get cert path for splunk python"
+        assert container_cmd_exit_0(cont, f"sh -c 'cat /*.cert >> {cert_path}'")
+
+        assert container_cmd_exit_0(cont, "/test/install-app.sh", user="splunk"), "failed to install app"
+        assert wait_for(p(http_status, url=f"http://{splunk_host}:8000", status=[200]), 120), "service didn't start"
+
+        assert wait_for(
+            p(has_series_data, cont), timeout_seconds=60, interval_seconds=2
+        ), "timed out waiting for series data"
+
+        try:
+            # test tosfx query with time
+            cmd = (
+                "search 'index=_internal series=* | table _time kb ev max_age | `gauge(kb)` "
+                "| `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
+            )
+            code, output = run_splunk_cmd(cont, cmd)
+            assert code == 0, output.decode("utf-8")
+            assert wait_for(p(has_datapoint, backend, metric="kb", metric_type="gauge", has_timestamp=True))
+            assert wait_for(p(has_datapoint, backend, metric="ev", metric_type="counter", has_timestamp=True))
             assert wait_for(
-                p(has_series_data, cont), timeout_seconds=60, interval_seconds=2
-            ), "timed out waiting for series data"
+                p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=True)
+            )
 
-            try:
-                # test tosfx query with time
-                cmd = (
-                    "search 'index=_internal series=* | table _time kb ev max_age | `gauge(kb)` "
-                    "| `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
-                )
-                code, output = run_splunk_cmd(cont, cmd)
-                assert code == 0, output.decode("utf-8")
-                assert wait_for(p(has_datapoint, backend, metric="kb", metric_type="gauge", has_timestamp=True))
-                assert wait_for(p(has_datapoint, backend, metric="ev", metric_type="counter", has_timestamp=True))
-                assert wait_for(
-                    p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=True)
-                )
+            # check that datapoints are not streaming
+            num_datapoints = len(backend.datapoints)
+            assert ensure_always(lambda: len(backend.datapoints) == num_datapoints, timeout_seconds=60)
 
-                # check that datapoints are not streaming
-                num_datapoints = len(backend.datapoints)
-                assert ensure_always(lambda: len(backend.datapoints) == num_datapoints, timeout_seconds=60)
+            # test tosfx query without time
+            backend.reset_datapoints()
+            cmd = (
+                "search 'index=_internal series=* | table kb ev max_age | `gauge(kb)` "
+                "| `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
+            )
+            code, output = run_splunk_cmd(cont, cmd)
+            assert code == 0, output.decode("utf-8")
+            assert wait_for(p(has_datapoint, backend, metric="kb", metric_type="gauge", has_timestamp=False))
+            assert wait_for(p(has_datapoint, backend, metric="ev", metric_type="counter", has_timestamp=False))
+            assert wait_for(
+                p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=False)
+            )
 
-                # test tosfx query without time
-                backend.reset_datapoints()
-                cmd = (
-                    "search 'index=_internal series=* | table kb ev max_age | `gauge(kb)` "
-                    "| `counter(ev)` | `cumulative_counter(max_age)` | tosfx'"
-                )
-                code, output = run_splunk_cmd(cont, cmd)
-                assert code == 0, output.decode("utf-8")
-                assert wait_for(p(has_datapoint, backend, metric="kb", metric_type="gauge", has_timestamp=False))
-                assert wait_for(p(has_datapoint, backend, metric="ev", metric_type="counter", has_timestamp=False))
-                assert wait_for(
-                    p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=False)
-                )
-
-            finally:
-                print_datapoints(backend)
-                code, output = cont.exec_run("cat /opt/splunk/var/log/splunk/python.log")
-                if code == 0 and output:
-                    print("/opt/splunk/var/log/splunk/python.log:")
-                    print(output.decode("utf-8"))
+        finally:
+            print_datapoints(backend)
+            code, output = cont.exec_run("cat /opt/splunk/var/log/splunk/python.log")
+            if code == 0 and output:
+                print("/opt/splunk/var/log/splunk/python.log:")
+                print(output.decode("utf-8"))
+            code, output = cont.exec_run("cat /opt/splunk/var/log/splunk/signalfx-forwarder-app.log")
+            if code == 0 and output:
+                print("/opt/splunk/var/log/splunk/signalfx-forwarder-app.log")
+                print(output.decode("utf-8"))
