@@ -9,7 +9,7 @@ executors:
 
   machine_image:
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-1604:202007-01
 
 commands:
   install_slim:
@@ -151,6 +151,7 @@ jobs:
           environment:
             SPLUNK_VERSIONS: << parameters.version >>
           command: |
+            mkdir -p /tmp/scratch
             cp /tmp/workspace/signalfx-forwarder-*.tar.gz .
             pytest --verbose --junitxml=~/testresults/results.xml --html=~/testresults/results.html --self-contained-html tests/splunk_test.py
       - store_test_results:
@@ -179,5 +180,10 @@ workflows:
       - integration_test:
           name: splunk_8.0.0_test
           version: 8.0.0
+          requires:
+            - slim
+      - integration_test:
+          name: splunk_8.1.0_test
+          version: 8.1.0-debian
           requires:
             - slim
