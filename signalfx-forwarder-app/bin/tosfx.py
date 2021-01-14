@@ -36,10 +36,10 @@ class ToSFXCommand(EventingCommand):
 
     """
 
-    access_token = Option()
+    access_token = None
     debug = Option(validate=validators.Boolean(), default=False)
     dry_run = Option(validate=validators.Boolean(), default=False)
-    ingest_url = Option()
+    ingest_url = Option(validate=validators.Match("https://.*", r"^https://.*"))
     dp_endpoint = Option(default="/v2/datapoint")
 
     SPLUNK_PASSWORD_REALM = "realm"
@@ -55,8 +55,7 @@ class ToSFXCommand(EventingCommand):
             self.ingest_url = self.get_sfx_ingest_url()
 
         self.logger.error("getting access token")
-        if not self.access_token:
-            self.access_token = self.get_access_token()
+        self.access_token = self.get_access_token()
 
     def get_access_token(self):
         try:
