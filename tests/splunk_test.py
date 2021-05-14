@@ -3,11 +3,10 @@ import time
 from functools import partial as p
 
 import pytest
-from tests.helpers.assertions import container_cmd_exit_0, has_datapoint, http_status
+from tests.helpers.assertions import container_cmd_exit_0, has_datapoint, http_status, has_event
 from tests.helpers.util import container_ip, ensure_always, run_splunk, wait_for
 
 SPLUNK_VERSIONS = os.environ.get("SPLUNK_VERSIONS", "6.5.0,7.0.0,8.0.0,8.1.0-debian").split(",")
-
 
 def run_splunk_cmd(cont, cmd):
     cmd = f"splunk {cmd} -auth admin:testing123"
@@ -27,6 +26,11 @@ def print_datapoints(backend):
         print(dp)
 
 
+def print_events(backend):
+    print("\nEvents received:")
+    for ev in backend.events:
+        print(ev)
+
 @pytest.mark.parametrize("splunk_version", SPLUNK_VERSIONS)
 def test_signalfx_forwarder_app(splunk_version):
     with run_splunk(splunk_version) as [cont, backend]:
@@ -44,7 +48,7 @@ def test_signalfx_forwarder_app(splunk_version):
         assert wait_for(p(http_status, url=f"http://{splunk_host}:8000", status=[200]), 120), "service didn't start"
 
         assert wait_for(
-            p(has_series_data, cont), timeout_seconds=60, interval_seconds=2
+            p(has_series_data, cont), timeout_seconds=120, interval_seconds=2
         ), "timed out waiting for series data"
 
         try:
@@ -79,8 +83,18 @@ def test_signalfx_forwarder_app(splunk_version):
                 p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=False)
             )
 
+            # test eventstosfx query with time
+            cmd = (
+                "search '| makeresults | eval event_sfx_event=\"custom\", message=\"This is a test event for emulating a search\", stack=\"stacktest\", value=\"1234\" | eventstosfx'"
+            )
+            code, output = run_splunk_cmd(cont, cmd)
+            assert code == 0, output.decode("utf-8")
+            assert wait_for(p(has_event, backend, dimensions={"message":"This is a test event for emulating a search", "stack":"stacktest", "value": "1234"},category="USER_DEFINED", event_type="custom"))
+
+
         finally:
             print_datapoints(backend)
+            print_events(backend)
             code, output = cont.exec_run("cat /opt/splunk/var/log/splunk/python.log")
             if code == 0 and output:
                 print("/opt/splunk/var/log/splunk/python.log:")

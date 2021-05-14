@@ -11,7 +11,13 @@ def has_all_dims(dp, dims):
     """
     Tests if `dims`'s are all in a certain datapoint or event
     """
-    return dims <= dp.dimensions
+    return dims == dp['dimensions']
+
+def has_all_props(ev, props):
+    """
+    Tests if `props`'s are all in a certain event
+    """
+    return props == ev['properties']
 
 
 def has_no_datapoint(fake_services, metric=None, dimensions=None, value=None, metric_type=None):
@@ -50,6 +56,36 @@ def has_datapoint(
             return True
     return False
 
+def has_no_event(fake_services, category=None, properties=None, dimensions=None, event_type=None):
+    """
+    Returns True is there are no events matching the given parameters
+    """
+    return not has_event(fake_services, category, properties, dimensions, event_type, count=1)
+
+
+def has_event(
+    fake_services, category=None, properties=None, dimensions=None, event_type=None, count=1
+):
+    """
+    Returns True if there is a event seen in the fake_services backend that
+    has the given attributes.  If a property is not specified it will not be
+    considered.  Dimensions, if provided, will be tested as a subset of total
+    set of dimensions on the datapoint and not the complete set.
+    """
+    found = 0
+    for ev in fake_services.events:
+        if category and ev.get("category") != category:
+            continue
+        if dimensions and not has_all_dims(ev, dimensions):
+            continue
+        if properties and not has_all_props(ev, properties):
+            continue
+        if event_type and ev.get("eventType") != event_type:
+            continue
+        found += 1
+        if found >= count:
+            return True
+    return False
 
 def container_cmd_exit_0(container, command, **kwargs):
     """
