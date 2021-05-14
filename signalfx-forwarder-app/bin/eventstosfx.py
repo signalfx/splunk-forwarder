@@ -1,8 +1,8 @@
+# pylint: skip-file
 import gzip
 import json
 import os
 import sys
-from collections import OrderedDict
 from io import BytesIO
 
 current_path = os.path.dirname(__file__)  # pylint: disable=invalid-name
@@ -21,7 +21,7 @@ import requests  # isort:skip
 
 
 @Configuration()
-class ToSFXCommand(EventingCommand):
+class EventToSFXCommand(EventingCommand):
     """
     ## Syntax
 
@@ -92,7 +92,7 @@ class ToSFXCommand(EventingCommand):
         out = []
         payload = []
         for event in records:
-            add_event_to_payload(self,event=event, payload=payload)
+            add_event_to_payload(self, event=event, payload=payload)
 
             if self.debug:
                 event["endpoint"] = self.ingest_url + self.ev_endpoint
@@ -113,66 +113,6 @@ class ToSFXCommand(EventingCommand):
         for event in out:
             yield event
 
-
-def compose_ingest_url(ingest_base_url, ev_endpoint):
-    return ingest_base_url.rstrip("/") + ev_endpoint
-
-
-def populate_payload(metric_type, metric_list, payload, timestamp, dims):
-    expanded = []
-    for metric, value in metric_list:
-        expanded.append(dict([("metric", metric), ("value", value)]))
-        if timestamp:
-            expanded[-1]["timestamp"] = timestamp
-        expanded[-1]["dimensions"] = dims
-    if metric_type in payload:
-        # Append in reverse order because SignalFx expects data points oldest to latest
-        payload[metric_type] = expanded + payload[metric_type]
-    else:
-        payload[metric_type] = expanded
-
-
-def add_event_to_payload(self,event, payload):
-    
-    eventDict = dict()
-    dimensions = dict()
-    properties = dict()
-    timestamp = None
-    eventType = None
-    
-    
-    for key, value in event.items():
-        self.logger.error("key is "+str(key) + " value is "+str(value))
-        if value != "":
-            if key.startswith("event_"):
-                eventType = value
-            elif key.startswith("property_"):
-                if value[0] != "_" and len(value) < 256:
-                    newKey = key.replace("property_","")
-                    newKey = newKey.replace(".","_")
-                    self.logger.error("KEY is "+str(newKey))
-                    properties[newKey] = value
-            elif key == "_time":
-                timestamp = int(float(value) * 1000)
-            elif not key.startswith("_") and key != "punct" and not key.startswith("date_"):
-                if value[0] != "_" and len(value) < 256:
-                    dimensions[key.replace(".", "_")] = value
-                    
-    eventDict = {
-        'category': 'USER_DEFINED',
-        'dimensions': dimensions,
-        'properties': properties,
-        'timestamp': timestamp,
-        'eventType': eventType,
-    }
-    
-    payload.append(eventDict)
-    
-    event_payload = json.dumps(eventDict)
-    #self.logger.error(event_payload)
-    
-
-
 def send_payload(payload, target_url, token):
     body = BytesIO()
     with gzip.GzipFile(fileobj=body, mode="w") as fd:
@@ -185,5 +125,47 @@ def send_payload(payload, target_url, token):
         data=body.read(),
     )
     return resp
+    
+def compose_ingest_url(ingest_base_url, ev_endpoint):
+    return ingest_base_url.rstrip("/") + ev_endpoint
 
-dispatch(ToSFXCommand, sys.argv, sys.stdin, sys.stdout, __name__)
+def add_event_to_payload(self, event, payload):
+
+    eventDict = dict()
+    dimensions = dict()
+    properties = dict()
+    timestamp = None
+    eventType = None
+
+
+    for key, value in event.items():
+        self.logger.error("key is "+str(key) + " value is "+str(value))
+        if value != "":
+            if key.startswith("event_"):
+                eventType = value
+            elif key.startswith("property_"):
+                if value[0] != "_" and len(value) < 256:
+                    newKey = key.replace("property_", "")
+                    newKey = newKey.replace(".", "_")
+                    self.logger.error("KEY is "+str(newKey))
+                    properties[newKey] = value
+            elif key == "_time":
+                timestamp = int(float(value) * 1000)
+            elif not key.startswith("_") and key != "punct" and not key.startswith("date_"):
+                if value[0] != "_" and len(value) < 256:
+                    dimensions[key.replace(".", "_")] = value
+           
+    eventDict = {
+        'category': 'USER_DEFINED',
+        'dimensions': dimensions,
+        'properties': properties,
+        'timestamp': timestamp,
+        'eventType': eventType,
+    }
+
+    payload.append(eventDict)
+
+    event_payload = json.dumps(eventDict)
+    self.logger.error(event_payload)
+
+dispatch(EventToSFXCommand, sys.argv, sys.stdin, sys.stdout, __name__)
