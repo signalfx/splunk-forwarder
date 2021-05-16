@@ -17,7 +17,7 @@ Perform the tests here https://app.circleci.com/ pointed at your updated github 
 
 #### Unit Testing
 Unit testing should be completed successfully and can be performed locally as follows.
-If you are adding new commands you may need to updated the test cases defined in [./signalfx-forwarder-app/tests/splunk_test.py](./signalfx-forwarder-app/tests/splunk_test.py) and possibly the fake handling of the commands [./signalfx-forwarder-app/tests/helpers/fake_backend.py](./signalfx-forwarder-app/tests/helpers/fake_backend.py)
+If you are adding new commands you may need to update the test cases defined in [./signalfx-forwarder-app/tests/splunk_test.py](./signalfx-forwarder-app/tests/splunk_test.py) and possibly the fake handling of the commands [./signalfx-forwarder-app/tests/helpers/fake_backend.py](./signalfx-forwarder-app/tests/helpers/fake_backend.py)
 
 This process has been followed on a Mac with Docker installed.
 
