@@ -83,9 +83,9 @@ def test_signalfx_forwarder_app(splunk_version):
                 p(has_datapoint, backend, metric="max_age", metric_type="cumulative_counter", has_timestamp=False)
             )
 
-            # test eventstosfx query with time
+            # test tosfxevents query with time
             cmd = (
-                "search '| makeresults | eval event_sfx_event=\"custom\", message=\"This is a test event for emulating a search\", stack=\"stacktest\", value=\"1234\" | eventstosfx'"
+                "search '| makeresults | eval event_sfx_event=\"custom\", message=\"This is a test event for emulating a search\", stack=\"stacktest\", value=\"1234\" | tosfxevents'"
             )
             code, output = run_splunk_cmd(cont, cmd)
             assert code == 0, output.decode("utf-8")

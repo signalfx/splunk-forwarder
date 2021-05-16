@@ -22,7 +22,7 @@ A custom search command to metricize Splunk events and send them to SignalFx
 **tosfx**:       Send the datapoints to SignalFx in a non streaming manner.
                  Does not work in realtime mode, but has higher throughput.
 
-**eventstosfx**:       Send the datapoints to SignalFx as events.
+**tosfxevents**:       Send the datapoints to SignalFx as events.
                  Does not work in realtime mode, but has higher throughput.
 
 Both commands also support arguments `dryrun` and `debug`.
@@ -48,7 +48,7 @@ index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | r
 ```
 
 ```
-index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | rename kb AS kilobytes | table _time kilobytes eventCount series host | `gauge(kilobytes)` |`gauge(eventCount)` | eventstosfx
+index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | rename kb AS kilobytes | table _time kilobytes eventCount series host | `gauge(kilobytes)` |`gauge(eventCount)` | tosfxevents
 ```
 
 ```

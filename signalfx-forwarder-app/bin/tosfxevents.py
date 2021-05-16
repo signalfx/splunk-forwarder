@@ -21,11 +21,11 @@ import requests  # isort:skip
 
 
 @Configuration()
-class EventToSFXCommand(EventingCommand):
+class ToSFXEventsCommand(EventingCommand):
     """
     ## Syntax
 
-    <command> | eventstosfx
+    <command> | tosfxevents
 
     ## Description
 
@@ -168,4 +168,4 @@ def add_event_to_payload(self, event, payload):
     event_payload = json.dumps(eventDict)
     self.logger.error(event_payload)
 
-dispatch(EventToSFXCommand, sys.argv, sys.stdin, sys.stdout, __name__)
+dispatch(ToSFXEventsCommand, sys.argv, sys.stdin, sys.stdout, __name__)
