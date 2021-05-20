@@ -1,4 +1,4 @@
-#pylint:disable=duplicate-code
+#pylint: min-similarity-lines=100
 import gzip
 import json
 import os
