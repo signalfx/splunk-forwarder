@@ -1,4 +1,4 @@
-# pylint: skip-file
+#pylint:disable=broad-except
 import gzip
 import json
 import os
@@ -29,10 +29,12 @@ class ToSFXEventsCommand(EventingCommand):
 
     ## Description
 
-    One or more datapoints are generated for each input event's field(s) of the
-    form `gauge_*`, `counter_*` or `cumulative_counter_*`.  The metric name in
-    SignalFx will be the `*` part of the field name.  Any additional fields on
-    the event will be attached as dimensions to the generated datapoints.
+    One or more events are generated for each input event.  If there is a field
+    called event_* the event_type will be set to the value of the field. 
+    Fields beginning with property_ are stripped of their property_ and become 
+    properties on the event.
+    Any additional fields on the event will be attached as dimensions
+    to the generated event.
 
     """
 
@@ -131,7 +133,6 @@ def compose_ingest_url(ingest_base_url, ev_endpoint):
 
 def add_event_to_payload(self, event, payload):
 
-    eventDict = dict()
     dimensions = dict()
     properties = dict()
     timestamp = None
@@ -139,7 +140,6 @@ def add_event_to_payload(self, event, payload):
 
 
     for key, value in event.items():
-        self.logger.error("key is "+str(key) + " value is "+str(value))
         if value != "":
             if key.startswith("event_"):
                 eventType = value
