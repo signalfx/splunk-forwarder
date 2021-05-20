@@ -1,4 +1,4 @@
-#pylint:disable=broad-except
+#pylint:disable=duplicate-code
 import gzip
 import json
 import os
@@ -30,8 +30,8 @@ class ToSFXEventsCommand(EventingCommand):
     ## Description
 
     One or more events are generated for each input event.  If there is a field
-    called event_* the event_type will be set to the value of the field. 
-    Fields beginning with property_ are stripped of their property_ and become 
+    called event_* the event_type will be set to the value of the field.
+    Fields beginning with property_ are stripped of their property_ and become
     properties on the event.
     Any additional fields on the event will be attached as dimensions
     to the generated event.
@@ -127,7 +127,7 @@ def send_payload(payload, target_url, token):
         data=body.read(),
     )
     return resp
-    
+
 def compose_ingest_url(ingest_base_url, ev_endpoint):
     return ingest_base_url.rstrip("/") + ev_endpoint
 
@@ -136,36 +136,36 @@ def add_event_to_payload(self, event, payload):
     dimensions = dict()
     properties = dict()
     timestamp = None
-    eventType = None
+    event_type = None
 
 
     for key, value in event.items():
         if value != "":
             if key.startswith("event_"):
-                eventType = value
+                event_type = value
             elif key.startswith("property_"):
                 if value[0] != "_" and len(value) < 256:
-                    newKey = key.replace("property_", "")
-                    newKey = newKey.replace(".", "_")
-                    self.logger.error("KEY is "+str(newKey))
-                    properties[newKey] = value
+                    new_key = key.replace("property_", "")
+                    new_key = new_key.replace(".", "_")
+                    self.logger.error("KEY is "+str(new_key))
+                    properties[new_key] = value
             elif key == "_time":
                 timestamp = int(float(value) * 1000)
             elif not key.startswith("_") and key != "punct" and not key.startswith("date_"):
                 if value[0] != "_" and len(value) < 256:
                     dimensions[key.replace(".", "_")] = value
-           
-    eventDict = {
+
+    event_dict = {
         'category': 'USER_DEFINED',
         'dimensions': dimensions,
         'properties': properties,
         'timestamp': timestamp,
-        'eventType': eventType,
+        'eventType': event_type,
     }
 
-    payload.append(eventDict)
+    payload.append(event_dict)
 
-    event_payload = json.dumps(eventDict)
+    event_payload = json.dumps(event_dict)
     self.logger.error(event_payload)
 
 dispatch(ToSFXEventsCommand, sys.argv, sys.stdin, sys.stdout, __name__)
