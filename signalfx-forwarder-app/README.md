@@ -48,7 +48,7 @@ index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | r
 ```
 
 ```
-index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | rename kb AS kilobytes | table _time kilobytes eventCount series host | `gauge(kilobytes)` |`gauge(eventCount)` | tosfxevents
+index=myapp status="error"| eval message="an event that needs to be seen in SignalFX" | eval event_type="myapp_error" | tosfxevents
 ```
 
 ```
