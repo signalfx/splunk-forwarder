@@ -48,7 +48,7 @@ index=_internal group=per_index_thruput series!=_* | rename ev AS eventCount | r
 ```
 
 ```
-index=myapp status="error"| eval message="an event that needs to be seen in SignalFX" | eval event_type="myapp_error" | tosfxevents
+index=myapp status="error"| eval message="an event to send to SignalFX" | eval event_type="myapp_error" | tosfxevents
 ```
 
 ```
