@@ -11,6 +11,9 @@ splunk list user -auth admin:testing123
 
 splunk install app ${SCRIPT_DIR}/signalfx-forwarder-*.tar.gz
 
+# set low so it works most of the time - I hit errors at default of 5000
+splunk set minfreemb 100
+
 curl -k  https://admin:testing123@localhost:8089/servicesNS/nobody/signalfx-forwarder-app/storage/collections/data/sfx_ingest_config -XPOST -H'Content-Type: application/json' -d "$(printf '{"ingest_url": "%s", "access_token": "testing123"}' "$INGEST_HOST")"
 
 splunk restart

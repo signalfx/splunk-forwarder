@@ -1,15 +1,11 @@
-FROM python:3.6
+FROM python:3.8
 
 RUN curl -fsSL get.docker.com -o /tmp/get-docker.sh && \
     sh /tmp/get-docker.sh
 
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt
-
-COPY tests/requirements.txt /tmp/tests/requirements.txt
-RUN pip install -r /tmp/tests/requirements.txt
-
 COPY ./ /code
 WORKDIR /code
+
+RUN pip install -r /code/tests/requirements.txt
 
 CMD pytest -n auto --verbose tests/splunk_test.py

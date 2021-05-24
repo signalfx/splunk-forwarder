@@ -19,7 +19,7 @@ def bind_tcp_socket(host="127.0.0.1", port=0):
 # Fake the /v2/datapoint endpoint and just stick all of the metrics in a
 # list
 # pylint: disable=unused-variable
-def _make_fake_ingest(datapoints):
+def _make_fake_ingest(datapoints, events):
     app = Sanic()
 
     @app.middleware("request")
@@ -46,7 +46,23 @@ def _make_fake_ingest(datapoints):
         datapoints.extend(out)
 
         return response.json("OK")
+    @app.post("/v2/event")
+    async def handle_events(request):
+        
+        is_json = "application/json" in request.headers.get("content-type")
 
+        if not is_json:
+            return response.text("Bad Content Type", status=400)
+
+        evs = json.loads(request.body)
+
+        out = []
+        for ev in evs:
+            out.append(ev)
+
+        events.extend(out)
+
+        return response.json("OK")
     return app
 
 
@@ -58,8 +74,9 @@ def _make_fake_ingest(datapoints):
 def start(ip_addr="127.0.0.1", ingest_port=0):
     # Data structures are thread-safe due to the GIL
     _datapoints = []
+    _events = []
 
-    ingest_app = _make_fake_ingest(_datapoints)
+    ingest_app = _make_fake_ingest(_datapoints,_events)
 
     [ingest_sock, _ingest_port] = bind_tcp_socket(ip_addr, ingest_port)
 
@@ -80,9 +97,12 @@ def start(ip_addr="127.0.0.1", ingest_port=0):
         ingest_url = f"http://{ingest_host}:{ingest_port}"
 
         datapoints = _datapoints
+        events = _events
 
         def reset_datapoints(self):
             self.datapoints.clear()
+        def reset_events(self):
+            self.events.clear()
 
     try:
         yield FakeBackend()
