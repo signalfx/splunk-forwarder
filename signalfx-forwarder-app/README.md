@@ -3,6 +3,11 @@
 A custom search command to metricize Splunk events and send them to SignalFx
 
 ### Setup
+**Access Token:** For best security practices, we recommend using an access token
+with INGEST only permissions for this application. 
+See the [Authentication Tokens](https://dev.splunk.com/observability/docs/administration/authtokens/)
+documentation for more information.
+
 1. The signalfx-forwarder app needs to be installed on the search head. App
    installation process is identical to any other app (may vary depending on
    Splunk Cloud vs on-premise deployment).
@@ -28,7 +33,7 @@ A custom search command to metricize Splunk events and send them to SignalFx
 Both commands also support arguments `dryrun` and `debug`.
 - `dryrun=t` will result in not sending any metrics to SignalFx, which is useful for
 testing your potential output in Splunk.
-- `debug=t` will log both your access token and the ingest url.
+- `debug=t` will log the ingest url.
 
 These arguments can be appended to the new commands. For example, `tosfx debug=t dryrun=t`
 
