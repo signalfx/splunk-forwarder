@@ -1,6 +1,6 @@
 docker==4.1.0
 netifaces==0.10.9
-protobuf==3.5.1
+protobuf==3.18.3
 pylint==2.5.3
 pytest-html==1.22
 pytest-xdist==2.0.0
